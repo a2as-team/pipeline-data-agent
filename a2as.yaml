@@ -1,0 +1,601 @@
+manifest:
+  version: "0.1.3"
+  schema: https://a2as.org/cert/schema
+  subject:
+    name: biplovbhandari/pipeline-data-agent
+    source: https://github.com/biplovbhandari/pipeline-data-agent
+    branch: main
+    commit: "e178fb98"
+    scope: [pipeline_data_agent/__init__.py, pipeline_data_agent/pattern_tools.py, pipeline_data_agent/anomaly_tools.py, pipeline_data_agent/utils/data_access.py,
+      pipeline_data_agent/agent.py, pipeline_data_agent/prompts.py, pipeline_data_agent/retrieval_tools.py, pipeline_data_agent/utils/data_downloader.py]
+  issued:
+    by: A2AS.org
+    at: '2026-02-11T16:43:48Z'
+    url: https://a2as.org/certified/agents/biplovbhandari/pipeline-data-agent
+  signatures:
+    digest: sha256:N5v3ZOE7Iia16sncXmG4jtN-LW99IXZK_4UGRckD7ls
+    key: ed25519:bGcUfDURe5IXvEacPYKvvf8xlNFE1Ham9H4jiwx7y5E
+    sig: ed25519:qjCg-9TNhZCBnm0eWOU9YnTywydXXVVE8ipJuGrQqiGfzRyJZt5iu1ncqZU923JkcCNEWgZfbL2PVhYXFnvhBw
+
+agents:
+  root_agent:
+    type: instance
+    models: [LLM_MODEL]
+    tools: [get_dataset_info, query_total_volume, count_unique_pipelines, find_top_state_by_activity, get_top_pipelines_by_volume,
+      calculate_average_quantity, analyze_receipts_vs_deliveries, detect_anomalies_simple, detect_business_rule_violations,
+      detect_data_completeness_issues, detect_entity_duplicates_across_dimensions, analyze_seasonal_patterns, analyze_monthly_trends,
+      find_consistent_pipelines, analyze_receipts_deliveries_patterns, analyze_activity_over_time, calculate_net_flows, get_top_locations_by_metric,
+      aggregate_by_multiple_dimensions, filter_and_rank, analyze_time_series, compare_across_years, calculate_correlation,
+      compare_before_after, perform_clustering]
+    params:
+      name: pipeline_data_agent
+      instruction: AGENT_INSTRUCTION.format(today=date_today)
+      global_instruction: ['You are a pipeline data analysis expert. Today''s date: {date_today}']
+      before_agent_callback: setup_before_agent_call
+      generate_content_config:
+        class: GenerateContentConfig
+        temperature: "0.1"
+
+models:
+  LLM_MODEL:
+    type: literal
+    agents: [root_agent]
+
+tools:
+  aggregate_by_multiple_dimensions:
+    type: function
+    agents: [root_agent]
+    params:
+      description: |-
+        Aggregate data by multiple dimensions with time grouping.
+
+        Args:
+            year: Year to analyze
+            group_columns: List of columns to group by
+            time_period: 'monthly', 'quarterly', or 'weekly'
+            metric: 'sum', 'mean', 'count'
+  analyze_activity_over_time:
+    type: function
+    agents: [root_agent]
+    params:
+      description: Analyze how pipeline activity has changed over time (always deduplicated for accuracy).
+  analyze_monthly_trends:
+    type: function
+    agents: [root_agent]
+    params:
+      description: Analyze monthly trends in pipeline operations (always deduplicated for accuracy).
+  analyze_receipts_deliveries_patterns:
+    type: function
+    agents: [root_agent]
+    params:
+      description: Analyze if receipts and deliveries follow similar patterns (always deduplicated for accuracy).
+  analyze_receipts_vs_deliveries:
+    type: function
+    agents: [root_agent]
+    params:
+      description: Analyze receipts vs deliveries in the dataset.
+  analyze_seasonal_patterns:
+    type: function
+    agents: [root_agent]
+    params:
+      description: Analyze seasonal patterns in gas flows (always deduplicated for accuracy).
+  analyze_time_series:
+    type: function
+    agents: [root_agent]
+    params:
+      description: |-
+        Analyze time series data with specified granularity (always deduplicated for accuracy).
+
+        Args:
+            filters: Dictionary of filters to apply
+            time_granularity: Time grouping ('daily', 'weekly', 'monthly', etc.)
+            metric: Metric to analyze ('sum', 'mean', 'count')
+  calculate_average_quantity:
+    type: function
+    agents: [root_agent]
+    params:
+      description: Calculate average scheduled quantity per transaction (always deduplicated for accuracy).
+  calculate_correlation:
+    type: function
+    agents: [root_agent]
+    params:
+      description: |-
+        Calculate correlation between two metrics over time (always deduplicated for accuracy).
+
+        Args:
+            x_metric: First metric ('volume', 'active_locations', 'transaction_count', 'unique_pipelines')
+            y_metric: Second metric ('volume', 'active_locations', 'transaction_count', 'unique_pipelines')
+            time_granularity: Time grouping ('daily', 'weekly', 'monthly', 'quarterly')
+            filters: Optional filters to apply (year, state, category, transaction_type, etc.)
+  calculate_net_flows:
+    type: function
+    agents: [root_agent]
+    params:
+      description: |-
+        Calculate net flows grouped by specified column for a given year (always deduplicated for accuracy).
+
+        Args:
+            year: Year to analyze
+            group_by_column: Column to group by ('pipeline_name', 'state_abb', etc.)
+  compare_across_years:
+    type: function
+    agents: [root_agent]
+    params:
+      description: |-
+        Compare metrics across multiple years with year-over-year analysis (always deduplicated for accuracy).
+
+        Args:
+            start_year: Starting year for comparison
+            end_year: Ending year for comparison
+            group_by_column: Column to group by
+            metric: Metric to compare
+  compare_before_after:
+    type: function
+    agents: [root_agent]
+    params:
+      description: |-
+        Compare metrics before and after a cutoff date (always deduplicated for accuracy).
+
+        Args:
+            cutoff_date: Date in YYYY-MM-DD format to split the analysis
+            metric: Metric to compare ('volume', 'transaction_count', 'unique_locations', 'average_quantity')
+            time_granularity: Time grouping ('daily', 'weekly', 'monthly')
+            filters: Filters to apply (pipeline, state, category, transaction_type, etc.)
+  count_unique_pipelines:
+    type: function
+    agents: [root_agent]
+    params:
+      description: Count unique pipelines in the dataset.
+  detect_anomalies_simple:
+    type: function
+    agents: [root_agent]
+    params:
+      description: |-
+        Detect anomalies using various methods with flexible LLM-orchestrated parameters.
+
+        Args:
+            method: 'zscore', 'rolling', 'change', 'percentile'
+            filters: Dictionary of filters to apply (year, state, etc.)
+            group_by_column: Column to group by ('loc_name', 'connecting_entity', 'pipeline_name', 'total')
+            rolling_days: Number of days for window (e.g., 90, 20, 30)
+            std_threshold: Threshold for detection (std devs, percentile, change %)
+            max_examples: Maximum number of examples to return
+  detect_business_rule_violations:
+    type: function
+    agents: [root_agent]
+    params:
+      description: |-
+        Detect business rule violations by checking if a category is acting contrary to expected direction.
+
+        Args:
+            category: Category to check (e.g., 'Production', 'LDC', 'Industrial', 'Storage')
+            expected_direction: Expected transaction direction ('receipts' or 'deliveries')
+            filters: Dictionary of additional filters to apply (year, state, etc.)
+            max_examples: Maximum number of violation examples to return
+
+        Examples:
+            - category='Production', expected_direction='receipts' → finds Production acting as deliveries
+            - category='LDC', expected_direction='deliveries' → finds LDC acting as receipts
+            - category='Industrial', expected_direction='deliveries' → finds Industrial acting as receipts
+  detect_data_completeness_issues:
+    type: function
+    agents: [root_agent]
+    params:
+      description: |-
+        Detect data completeness issues by checking for missing required fields in records.
+
+        Args:
+            category: Category to check (e.g., 'Interconnect', 'Production', 'LDC')
+            required_fields: List of fields that should be complete (e.g., ['connecting_pipeline', 'connecting_entity'])
+            completeness_rule: How to check completeness:
+                - 'all_required': ALL listed fields must be present/non-empty
+                - 'any_required': At least ONE listed field must be present/non-empty
+            filters: Dictionary of additional filters to apply (year, state, etc.)
+            max_examples: Maximum number of incomplete record examples to return
+
+        Examples:
+            - category='Interconnect', required_fields=['connecting_pipeline', 'connecting_entity'], completeness_rule='all_required'
+              → Finds Interconnect records missing BOTH partner fields
+            - category='Production', required_fields=['scheduled_quantity'], completeness_rule='all_required'
+              → Finds Production records missing quantity data
+  detect_entity_duplicates_across_dimensions:
+    type: function
+    agents: [root_agent]
+    params:
+      description: |-
+        Detect entity duplicates where the same entity combination appears across multiple dimensions.
+        - automatically runs separate analysis for each dimension field.
+
+        Args:
+            entity_fields: Fields that define the entity (e.g., ['pipeline_name', 'loc_name'])
+            dimension_fields: Fields to check for duplicates across (['state_abb', 'county_name'])
+            filters: Dictionary of additional filters to apply (year, state, etc.)
+            max_examples: Maximum number of duplicate examples to return
+
+        Examples:
+            - entity_fields=['pipeline_name', 'loc_name'], dimension_fields=['state_abb', 'county_name']
+              → Finds pipeline-location combinations appearing in multiple states AND counties (separate analysis)
+            - entity_fields=['connecting_entity'], dimension_fields=['category_short']
+              → Finds entities appearing in multiple categories
+            - entity_fields=['employee_id'], dimension_fields=['department', 'location']
+              → Finds employees in multiple departments AND locations
+  filter_and_rank:
+    type: function
+    agents: [root_agent]
+    params:
+      description: |-
+        Apply filters and rank by specified metric.
+
+        Enhanced with smart duplicate handling:
+
+        Args:
+            filters: Dictionary of filters to apply. Common filters:
+                - 'year': int (e.g., 2024) - filters by eff_gas_day year
+                - 'state': str (e.g., 'PA') - filters by state_abb
+                - 'transaction_type': str ('receipts' or 'deliveries') - filters by rec_del_sign
+                - 'pipeline': str - filters by pipeline_name
+            group_by_column: Column to group by ('connecting_entity', 'pipeline_name', 'state_abb', etc.)
+            metric: Aggregation metric ('sum', 'mean', 'count')
+            limit: Number of top results to return
+
+        CRITICAL: Always include 'year' filter when user mentions specific years!
+  find_consistent_pipelines:
+    type: function
+    agents: [root_agent]
+    params:
+      description: Find pipelines with most consistent volumes (always deduplicated for accuracy).
+  find_top_state_by_activity:
+    type: function
+    agents: [root_agent]
+    params:
+      description: Find the state with the most pipeline activity.
+  get_dataset_info:
+    type: function
+    agents: [root_agent]
+    params:
+      description: Get comprehensive information about the dataset including schema, statistics, and data quality.
+  get_top_locations_by_metric:
+    type: function
+    agents: [root_agent]
+    params:
+      description: |-
+        Get top locations by specified metric (sum, mean, count) for receipts or deliveries.
+
+        Args:
+            year: Year to analyze
+            transaction_type: 'receipts' or 'deliveries'
+            location_column: Column to group by ('state_abb', 'loc_name', etc.)
+            metric: 'sum', 'mean', 'count', or 'average_daily'
+            limit: Number of top locations to return
+  get_top_pipelines_by_volume:
+    type: function
+    agents: [root_agent]
+    params:
+      description: |-
+        Get top N pipelines by total volume (always deduplicated for accuracy).
+
+        Args:
+            limit: Number of top pipelines to return
+  perform_clustering:
+    type: function
+    agents: [root_agent]
+    params:
+      description: |-
+        Generic clustering tool that groups data by specified dimensions and applies K-Means clustering (always deduplicated for accuracy).
+
+        Args:
+            filters: Dictionary of filters to apply (year, pipeline, state, etc.)
+            group_by_column: Column to group by ('loc_name', 'connecting_entity', 'pipeline_name', etc.)
+            time_aggregation: How to aggregate time ('monthly', 'quarterly', 'weekly')
+            n_clusters: Number of clusters for K-Means
+            normalize: Whether to normalize the data before clustering
+
+        Returns:
+            Dict with cluster assignments, centroids, and analysis metrics
+  query_total_volume:
+    type: function
+    agents: [root_agent]
+    params:
+      description: |-
+        Get total volume for a specific year (always deduplicated for accuracy).
+
+        Args:
+            year: Year to filter data (e.g., '2024')
+
+imports:
+  Agent: google.adk.agents.Agent
+  AGENT_INSTRUCTION: prompts.AGENT_INSTRUCTION
+  aggregate_by_multiple_dimensions: retrieval_tools.aggregate_by_multiple_dimensions
+  analyze_activity_over_time: pattern_tools.analyze_activity_over_time
+  analyze_monthly_trends: pattern_tools.analyze_monthly_trends
+  analyze_receipts_deliveries_patterns: pattern_tools.analyze_receipts_deliveries_patterns
+  analyze_receipts_vs_deliveries: retrieval_tools.analyze_receipts_vs_deliveries
+  analyze_seasonal_patterns: pattern_tools.analyze_seasonal_patterns
+  analyze_time_series: retrieval_tools.analyze_time_series
+  Any: typing.Any
+  calculate_average_quantity: retrieval_tools.calculate_average_quantity
+  calculate_correlation: pattern_tools.calculate_correlation
+  calculate_net_flows: retrieval_tools.calculate_net_flows
+  CallbackContext: google.adk.agents.callback_context.CallbackContext
+  compare_across_years: retrieval_tools.compare_across_years
+  compare_before_after: pattern_tools.compare_before_after
+  count_unique_pipelines: retrieval_tools.count_unique_pipelines
+  datetime: datetime.datetime
+  detect_anomalies_simple: anomaly_tools.detect_anomalies_simple
+  detect_business_rule_violations: anomaly_tools.detect_business_rule_violations
+  detect_data_completeness_issues: anomaly_tools.detect_data_completeness_issues
+  detect_entity_duplicates_across_dimensions: anomaly_tools.detect_entity_duplicates_across_dimensions
+  Dict: typing.Dict
+  ensure_dataset_available: utils.data_downloader.ensure_dataset_available
+  filter_and_rank: retrieval_tools.filter_and_rank
+  find_consistent_pipelines: pattern_tools.find_consistent_pipelines
+  find_top_state_by_activity: retrieval_tools.find_top_state_by_activity
+  get_dataset: utils.data_access.get_dataset
+  get_dataset_info: retrieval_tools.get_dataset_info
+  get_top_locations_by_metric: retrieval_tools.get_top_locations_by_metric
+  get_top_pipelines_by_volume: retrieval_tools.get_top_pipelines_by_volume
+  KMeans: sklearn.cluster.KMeans
+  List: typing.List
+  LiteLlm: google.adk.models.lite_llm.LiteLlm
+  np: numpy
+  Optional: typing.Optional
+  os: os
+  Path: pathlib.Path
+  pd: pandas
+  perform_clustering: pattern_tools.perform_clustering
+  query_total_volume: retrieval_tools.query_total_volume
+  requests: requests
+  root_agent: agent.root_agent
+  set_dataset: utils.data_access.set_dataset
+  silhouette_score: sklearn.metrics.silhouette_score
+  StandardScaler: sklearn.preprocessing.StandardScaler
+  stats: scipy.stats
+  sys: sys
+  ToolContext: google.adk.tools.ToolContext
+  types: google.genai.types
+  warnings: warnings
+
+functions:
+  _change_anomaly_detection:
+    type: sync
+    module: pipeline_data_agent.anomaly_tools
+    args: [df_filtered, group_by_column, rolling_days, change_threshold, max_examples, filters_applied, remove_duplicates]
+  _format_anomaly_results:
+    type: sync
+    module: pipeline_data_agent.anomaly_tools
+    args: [anomalies, entity_col, rolling_days, threshold, filters_applied, method_desc, method_type, remove_duplicates]
+  _format_change_results:
+    type: sync
+    module: pipeline_data_agent.anomaly_tools
+    args: [anomalies, entity_col, rolling_days, change_threshold, filters_applied, remove_duplicates]
+  _percentile_anomaly_detection:
+    type: sync
+    module: pipeline_data_agent.anomaly_tools
+    args: [df_filtered, group_by_column, rolling_days, percentile_threshold, max_examples, filters_applied, remove_duplicates]
+  _rolling_anomaly_detection:
+    type: sync
+    module: pipeline_data_agent.anomaly_tools
+    args: [df_filtered, group_by_column, rolling_days, std_threshold, max_examples, filters_applied, method_type, remove_duplicates]
+  add_time_key:
+    type: sync
+    module: pipeline_data_agent.pattern_tools
+    args: [data]
+  aggregate_by_multiple_dimensions:
+    type: sync
+    module: pipeline_data_agent.retrieval_tools
+    args: [tool_context, year, group_columns, time_period, metric]
+    params:
+      returns: Dict
+  analyze_activity_over_time:
+    type: sync
+    module: pipeline_data_agent.pattern_tools
+    args: [tool_context]
+    params:
+      returns: Dict
+  analyze_monthly_trends:
+    type: sync
+    module: pipeline_data_agent.pattern_tools
+    args: [tool_context]
+    params:
+      returns: Dict
+  analyze_receipts_deliveries_patterns:
+    type: sync
+    module: pipeline_data_agent.pattern_tools
+    args: [tool_context]
+    params:
+      returns: Dict
+  analyze_receipts_vs_deliveries:
+    type: sync
+    module: pipeline_data_agent.retrieval_tools
+    args: [tool_context]
+    params:
+      returns: Dict
+  analyze_seasonal_patterns:
+    type: sync
+    module: pipeline_data_agent.pattern_tools
+    args: [tool_context]
+    params:
+      returns: Dict
+  analyze_time_series:
+    type: sync
+    module: pipeline_data_agent.retrieval_tools
+    args: [tool_context, filters, time_granularity, metric]
+    params:
+      returns: Dict
+  calculate_average_quantity:
+    type: sync
+    module: pipeline_data_agent.retrieval_tools
+    args: [tool_context]
+    params:
+      returns: Dict
+  calculate_correlation:
+    type: sync
+    module: pipeline_data_agent.pattern_tools
+    args: [tool_context, x_metric, y_metric, time_granularity, filters]
+    params:
+      returns: Dict
+  calculate_metric_by_period:
+    type: sync
+    module: pipeline_data_agent.pattern_tools
+    args: [data, metric_name]
+  calculate_metric_series:
+    type: sync
+    module: pipeline_data_agent.pattern_tools
+    args: [metric_name]
+  calculate_net_flows:
+    type: sync
+    module: pipeline_data_agent.retrieval_tools
+    args: [tool_context, year, group_by_column]
+    params:
+      returns: Dict
+  compare_across_years:
+    type: sync
+    module: pipeline_data_agent.retrieval_tools
+    args: [tool_context, start_year, end_year, group_by_column, metric]
+    params:
+      returns: Dict
+  compare_before_after:
+    type: sync
+    module: pipeline_data_agent.pattern_tools
+    args: [tool_context, cutoff_date, metric, time_granularity, filters]
+    params:
+      returns: Dict
+  count_unique_pipelines:
+    type: sync
+    module: pipeline_data_agent.retrieval_tools
+    args: [tool_context]
+    params:
+      returns: Dict
+  detect_anomalies_simple:
+    type: sync
+    module: pipeline_data_agent.anomaly_tools
+    args: [tool_context, method, filters, group_by_column, rolling_days, std_threshold, max_examples]
+    params:
+      returns: Dict
+  detect_business_rule_violations:
+    type: sync
+    module: pipeline_data_agent.anomaly_tools
+    args: [tool_context, category, expected_direction, filters, max_examples]
+    params:
+      returns: Dict
+  detect_data_completeness_issues:
+    type: sync
+    module: pipeline_data_agent.anomaly_tools
+    args: [tool_context, category, required_fields, completeness_rule, filters, max_examples]
+    params:
+      returns: Dict
+  detect_entity_duplicates_across_dimensions:
+    type: sync
+    module: pipeline_data_agent.anomaly_tools
+    args: [tool_context, entity_fields, dimension_fields, filters, max_examples]
+    params:
+      returns: Dict
+  download_dataset:
+    type: sync
+    module: pipeline_data_agent.utils.data_downloader
+    args: [data_path]
+    params:
+      returns: str
+  ensure_dataset_available:
+    type: sync
+    module: pipeline_data_agent.utils.data_downloader
+    args: [data_path]
+    params:
+      returns: str
+  filter_and_rank:
+    type: sync
+    module: pipeline_data_agent.retrieval_tools
+    args: [tool_context, filters, group_by_column, metric, limit]
+    params:
+      returns: Dict
+  find_consistent_pipelines:
+    type: sync
+    module: pipeline_data_agent.pattern_tools
+    args: [tool_context]
+    params:
+      returns: Dict
+  find_top_state_by_activity:
+    type: sync
+    module: pipeline_data_agent.retrieval_tools
+    args: [tool_context]
+    params:
+      returns: Dict
+  get_dataset:
+    type: sync
+    module: pipeline_data_agent.utils.data_access
+    args: [remove_duplicates]
+  get_dataset_info:
+    type: sync
+    module: pipeline_data_agent.retrieval_tools
+    args: [tool_context]
+    params:
+      returns: Dict
+  get_top_locations_by_metric:
+    type: sync
+    module: pipeline_data_agent.retrieval_tools
+    args: [tool_context, year, transaction_type, location_column, metric, limit]
+    params:
+      returns: Dict
+  get_top_pipelines_by_volume:
+    type: sync
+    module: pipeline_data_agent.retrieval_tools
+    args: [tool_context, limit]
+    params:
+      returns: Dict
+  perform_clustering:
+    type: sync
+    module: pipeline_data_agent.pattern_tools
+    args: [tool_context, filters, group_by_column, time_aggregation, n_clusters, normalize]
+    params:
+      returns: Dict
+  query_total_volume:
+    type: sync
+    module: pipeline_data_agent.retrieval_tools
+    args: [tool_context, year]
+    params:
+      returns: Dict
+  set_dataset:
+    type: sync
+    module: pipeline_data_agent.utils.data_access
+    args: [dataset]
+  setup_before_agent_call:
+    type: sync
+    module: pipeline_data_agent.agent
+    args: [callback_context]
+    params:
+      returns: None
+
+variables:
+  DATASET_PATH:
+    type: env
+    params:
+      caller: [os.getenv]
+      path: [pipeline_data_agent.utils.data_access, pipeline_data_agent.utils.data_downloader]
+  LLM_MODEL:
+    type: env
+    params:
+      caller: [os.getenv]
+      path: [pipeline_data_agent.agent]
+
+files:
+  data/pipeline_data.parquet:
+    type: variable
+    actions: [read, write, delete]
+    params:
+      caller: [Path, os.path.exists, os.path.abspath, open, os.remove]
+  data_dir:
+    type: variable
+    actions: [write]
+    params:
+      caller: [data_dir.mkdir]
+
+networks:
+  drive.google.com:
+    type: api
+    actions: [GET]
+    urls: ['/{...}']
+    protocols: [https]
+    ports: ["443"]
+    params:
+      pattern: https://drive.google.com/uc?export=download&id={file_id}&confirm=1
+      caller: [download_dataset]
